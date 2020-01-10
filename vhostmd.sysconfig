@@ -1,0 +1,14 @@
+# Uncomment the following line to print verbose messages.
+#VHOSTMD_VERBOSE=1
+
+# Override the default configuration file path.
+#VHOSTMD_CONFIG=/path/to/vhostmd.conf
+
+# Set the user that the daemon runs as after dropping root privs.
+VHOSTMD_USER=vhostmd
+
+# Set the libvirt URI.
+# Choose between KVM and Xen here.  If both are commented out then
+# the libvirt default URI will be used.
+VHOSTMD_URI=qemu:///system
+#VHOSTMD_URI=xen:///

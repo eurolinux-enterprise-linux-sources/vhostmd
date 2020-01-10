@@ -1,0 +1,121 @@
+#!/bin/sh
+#
+# vhostmd: Virtualization host metrics daemon
+#
+# chkconfig:   - 98 02
+# description: This daemon allows access to host information from guests.
+
+### BEGIN INIT INFO
+# Provides: vhostmd
+# Required-Start: libvirtd
+# Required-Stop: libvirtd
+# Default-Stop: 
+# Short-Description: Virtualization host metrics daemon
+# Description: This daemon allows access to host information from guests.
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+exec=/usr/sbin/vhostmd
+prog=vhostmd
+config=/etc/vhostmd/vhostmd.conf
+
+[ -e /etc/sysconfig/$prog ] && . /etc/sysconfig/$prog
+
+ARGS=
+if [ -n "$VHOSTMD_VERBOSE" ]; then
+    ARGS="$ARGS --verbose"
+fi
+if [ -n "$VHOSTMD_CONFIG" ]; then
+    ARGS="$ARGS --config $VHOSTMD_CONFIG"
+fi
+if [ -n "$VHOSTMD_USER" ]; then
+    ARGS="$ARGS --user $VHOSTMD_USER"
+fi
+if [ -n "$VHOSTMD_URI" ]; then
+    ARGS="$ARGS --connect $VHOSTMD_URI"
+elif virsh uri >/dev/null 2>&1; then
+    default_uri=$(virsh uri)
+    ARGS="$ARGS --connect '$default_uri'"
+fi
+
+lockfile=/var/lock/subsys/$prog
+
+start() {
+    [ -x $exec ] || exit 5
+    [ -f $config ] || exit 6
+    echo -n $"Starting $prog: "
+    daemon $exec $ARGS
+    retval=$?
+    echo
+    [ $retval -eq 0 ] && touch $lockfile
+    return $retval
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc $prog
+    rm -f /var/run/$prog.pid
+    retval=$?
+    echo
+    [ $retval -eq 0 ] && rm -f $lockfile
+    return $retval
+}
+
+restart() {
+    stop
+    start
+}
+
+reload() {
+    restart
+}
+
+force_reload() {
+    restart
+}
+
+rh_status() {
+    status $prog
+}
+
+rh_status_q() {
+    rh_status >/dev/null 2>&1
+}
+
+
+case "$1" in
+    start)
+        rh_status_q && exit 0
+        $1
+        ;;
+    stop)
+        if ! rh_status_q; then
+            rm -f $lockfile
+	    exit 0
+        fi
+        $1
+        ;;
+    restart)
+        $1
+        ;;
+    reload)
+        rh_status_q || exit 7
+        $1
+        ;;
+    force-reload)
+        force_reload
+        ;;
+    status)
+        rh_status
+        ;;
+    condrestart|try-restart)
+        rh_status_q || exit 0
+        restart
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+        exit 2
+esac
+exit $?

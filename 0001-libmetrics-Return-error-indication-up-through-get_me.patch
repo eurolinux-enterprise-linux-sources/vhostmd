@@ -1,0 +1,28 @@
+From efba4feaef25ea7efc9e35cfa6e92b69784aa88f Mon Sep 17 00:00:00 2001
+From: "Richard W.M. Jones" <rjones@redhat.com>
+Date: Thu, 10 May 2012 10:14:50 +0100
+Subject: [PATCH] libmetrics: Return error indication up through get_metric.
+
+If private function 'get_mdef' returns an error, then the error is not
+propagated back to the user because it gets lost in 'get_metric'.  Fix
+this by initializing 'ret' correctly.
+---
+ libmetrics/libmetrics.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libmetrics/libmetrics.c b/libmetrics/libmetrics.c
+index d049458..6d5c26f 100644
+--- a/libmetrics/libmetrics.c
++++ b/libmetrics/libmetrics.c
+@@ -571,7 +571,7 @@ int get_metric(const char *metric_name, metric **mdef, metric_context context)
+    metric *lmdef;
+    uint32_t sum;
+    int extra_len = 0;
+-   int ret = 0;
++   int ret = -1;
+ 
+    *mdef = NULL;
+ 
+-- 
+1.8.3.1
+
