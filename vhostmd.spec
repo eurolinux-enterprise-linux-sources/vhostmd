@@ -3,7 +3,7 @@
 Summary:       Virtualization host metrics daemon
 Name:          vhostmd
 Version:       0.5
-Release:       12%{?dist}
+Release:       13%{?dist}
 License:       GPLv2+
 
 URL:           http://gitorious.org/vhostmd
@@ -29,6 +29,9 @@ Patch4:        vhostmd-xen-conf-rhbz1085848.patch
 # https://bugzilla.redhat.com/show_bug.cgi?id=1359593
 # https://github.com/vhostmd/vhostmd/issues/1
 Patch5:        0001-Fix-name-and-location-of-the-vhostmd.conf-file.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1594270
+Patch6:        0001-Add-SIGPIPE-handler-and-reconnect.patch
 
 BuildRequires: chrpath
 BuildRequires: pkgconfig
@@ -79,6 +82,7 @@ Header and libraries necessary for metrics gathering development
 %patch3 -p1
 %patch4 -p1
 %patch5 -p1
+%patch6 -p1
 
 
 %build
@@ -200,6 +204,11 @@ exit 0
 
 
 %changelog
+* Fri Jun 29 2018 Richard W.M. Jones <rjones@redhat.com> - 0.5-13
+- Resolve signal handling which can leave containers in a faulty
+  monitoring state
+  resolves: rhbz#1594270
+
 * Wed Feb 22 2017 Richard W.M. Jones <rjones@redhat.com> - 0.5-12
 - Fix mistake in the man page.
   resolves: rhbz#1359593

@@ -1,0 +1,110 @@
+From c7646e329ca61a038777f58042539611ac42b007 Mon Sep 17 00:00:00 2001
+From: Michael Trapp <Michael.Trapp@sap.com>
+Date: Thu, 21 Jun 2018 15:03:50 +0200
+Subject: [PATCH] Add SIGPIPE handler and reconnect
+
+vhostmd has no signal handler for SIGPIPE and a restart of libvirtd results in
+a stopped vhostmd. The root cause seems to be a UDS socket between vhostmd and
+libvirtd which is closed by a libvirtd restart.
+In addition to the signal handler the connection to libvirtd has to be opened
+again otherwise vhostmd can't read any data from libvirtd and doesn't update
+the metrics.
+---
+ vhostmd/vhostmd.c   |  2 ++
+ vhostmd/virt-util.c | 43 ++++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 38 insertions(+), 7 deletions(-)
+
+diff --git a/vhostmd/vhostmd.c b/vhostmd/vhostmd.c
+index 8576609..dc80345 100644
+--- a/vhostmd/vhostmd.c
++++ b/vhostmd/vhostmd.c
+@@ -117,6 +117,7 @@ static void sig_handler(int sig, siginfo_t *siginfo ATTRIBUTE_UNUSED,
+       case SIGQUIT:
+          down = 1;
+          break;
++      case SIGPIPE:
+       default:
+          break;
+    }
+@@ -1054,6 +1055,7 @@ int main(int argc, char *argv[])
+    sigaction(SIGINT, &sig_action, NULL);
+    sigaction(SIGQUIT, &sig_action, NULL);
+    sigaction(SIGTERM, &sig_action, NULL);
++   sigaction(SIGPIPE, &sig_action, NULL);
+ 
+    xmlInitParser();
+ 
+diff --git a/vhostmd/virt-util.c b/vhostmd/virt-util.c
+index 1c31305..587146f 100644
+--- a/vhostmd/virt-util.c
++++ b/vhostmd/virt-util.c
+@@ -26,21 +26,48 @@
+ 
+ #include "util.h"
+ 
++enum {
++    CLOSED = 0,
++    ESTABLISHED
++} connection = CLOSED;
++
+ static virConnectPtr conn = NULL;
+ 
+ const char *libvirt_uri = NULL;
+ 
++void
++conn_close_cb(virConnectPtr c,
++              int reason ATTRIBUTE_UNUSED,
++              void *p ATTRIBUTE_UNUSED)
++{
++    if (c == conn)
++        connection = CLOSED;
++}
++
+ static int
+-do_connect (void)
++do_connect(void)
+ {
++    if (connection == ESTABLISHED)
++        return 0;
++
++    if (conn != NULL)
++        virConnectClose(conn);
++
++    conn = virConnectOpenReadOnly(libvirt_uri);
+     if (conn == NULL) {
+-	conn = virConnectOpenReadOnly (libvirt_uri);
+-	if (conn == NULL) {
+-	    vu_log (VHOSTMD_ERR, "Unable to open libvirt connection to %s",
+-		    libvirt_uri ? libvirt_uri : "default hypervisor");
+-	    return -1;
+-	}
++        vu_log(VHOSTMD_ERR, "Unable to open libvirt connection to %s",
++               libvirt_uri ? libvirt_uri : "default hypervisor");
++        return -1;
+     }
++
++    if (virConnectRegisterCloseCallback(conn, conn_close_cb, NULL, NULL)) {
++        vu_log(VHOSTMD_ERR, "Unable to register callback 'virConnectCloseFunc'");
++        virConnectClose(conn);
++        conn = NULL;
++        return -1;
++    }
++
++    connection = ESTABLISHED;
+     return 0;
+ }
+ 
+@@ -107,8 +134,10 @@ void vu_vm_free(vu_vm *vm)
+ void vu_vm_connect_close()
+ {
+    if (conn) {
++      virConnectUnregisterCloseCallback(conn, conn_close_cb);
+       virConnectClose(conn);
+       conn = NULL;
+    }
++   connection = CLOSED;
+ }
+ 
+-- 
+2.17.1
+
