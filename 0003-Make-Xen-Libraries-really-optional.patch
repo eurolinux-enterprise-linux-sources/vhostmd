@@ -1,0 +1,51 @@
+From 8fd4d847277bb9a7e53f8bb3f3f935004d8e5cc4 Mon Sep 17 00:00:00 2001
+From: Eduardo Otubo <eduardo.otubo@gmail.com>
+Date: Thu, 2 Aug 2012 19:42:00 -0300
+Subject: [PATCH 3/3] Make Xen Libraries really optional
+
+The default behavior in the configure script was to make with_xenstore
+set to 'true', which caused the compilation to break in my case because
+I don't have xen libraries, therefore, xs.h
+
+Now the default behavior is set according to its existence or not. Same
+thing for xenstat and xenctrl.
+
+Signed-off-by: Eduardo Otubo <eduardo.otubo@gmail.com>
+---
+ configure.ac | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index ee9c446..fb4309b 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -48,7 +48,7 @@ AC_ARG_ENABLE([libxenstat],
+         ;;
+    no) libxenstat=false ;;
+    *) AC_MSG_ERROR(bad value ${enableval} for --enable-libxenstat) ;;
+-  esac],[libxenstat=false]) 
++  esac],[AC_CHECK_HEADER(xenstat.h, libxenstat=true, libxenstat=false)])
+ AM_CONDITIONAL(LIBXENSTAT, test x$libxenstat = xtrue)
+ 
+ # Configure argument to support using xenctrl library for vm enumeration 
+@@ -60,7 +60,7 @@ AC_ARG_ENABLE([xenctrl],
+         ;;
+    no) xenctrl=false ;;
+    *) AC_MSG_ERROR(bad value ${enableval} for --enable-xenctrl) ;;
+-  esac],[xenctrl=false]) 
++  esac],[AC_CHECK_HEADER(xenctrl.h, xenctrl=true, xenctrl=false,)])
+ AM_CONDITIONAL(XENCTRL, test x$xenctrl = xtrue)
+ 
+ libvirt=false
+@@ -79,7 +79,7 @@ AC_ARG_WITH([xenstore],
+    yes) with_xenstore=true;;
+    no) with_xenstore=false;;
+    *) AC_MSG_ERROR(bad value ${withval} for --with-xenstore) ;;
+-  esac],[with_xenstore=true]) 
++  esac],[AC_CHECK_HEADER(xs.h, with_xenstore=true)])
+ AM_CONDITIONAL(WITH_XENSTORE, test x$with_xenstore = xtrue)
+ 
+ AC_OUTPUT(vhostmd/Makefile
+-- 
+1.8.3.1
+
