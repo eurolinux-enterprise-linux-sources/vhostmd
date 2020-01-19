@@ -1,0 +1,41 @@
+From 972ac212abcf0eacd7039b3a5987bd9ae2083607 Mon Sep 17 00:00:00 2001
+From: "Richard W.M. Jones" <rjones@redhat.com>
+Date: Wed, 22 Feb 2017 11:39:59 +0000
+Subject: [PATCH] Fix name and location of the vhostmd.conf file.
+
+Thanks: Xianghua Chen
+Bug: https://bugzilla.redhat.com/show_bug.cgi?id=1359593
+---
+ README             | 2 +-
+ docs/man/vhostmd.8 | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/README b/README
+index 788ffe4..cb23226 100644
+--- a/README
++++ b/README
+@@ -32,7 +32,7 @@ vhostmd [options]
+   Options:
+    -v | --verbose         Verbose messages
+    -d | --no-daemonize    Process will not daemonize
+-   -f | --config <file>   Configuration file (/etc/vhostmd.xml default)
++   -f | --config <file>   Configuration file (/etc/vhostmd/vhostmd.conf default)
+    -p | --pid-file <file> PID file (/var/run/vhostmd.pid default)
+ 
+ 
+diff --git a/docs/man/vhostmd.8 b/docs/man/vhostmd.8
+index dfcb301..2c73adc 100644
+--- a/docs/man/vhostmd.8
++++ b/docs/man/vhostmd.8
+@@ -32,7 +32,7 @@ Drop root privileges and run as the named non-root user.
+ Specify an alternate path for vhostmd to record its process-id in. Normally /var/run/vhostmd.pid
+ .TP
+ .B \-f, --config <file>
+-Specify a different configuration file. Normally /etc/vhostmd.xml
++Specify a different configuration file. Normally /etc/vhostmd/vhostmd.conf
+ .SH CONFIG FILE
+ At startup, vhostmd reads
+ .I /etc/vhostmd/vhostmd.conf,
+-- 
+2.10.2
+

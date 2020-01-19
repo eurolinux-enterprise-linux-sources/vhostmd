@@ -3,7 +3,7 @@
 Summary:       Virtualization host metrics daemon
 Name:          vhostmd
 Version:       0.5
-Release:       11%{?dist}
+Release:       12%{?dist}
 License:       GPLv2+
 
 URL:           http://gitorious.org/vhostmd
@@ -25,6 +25,10 @@ Patch3:        0003-Make-Xen-Libraries-really-optional.patch
 # command has changed in RHEL 7 (RHBZ#1085848).
 # Note: /etc/vhostmd/vhostmd.conf.for.xen is not actually shipped in RHEL 7.
 Patch4:        vhostmd-xen-conf-rhbz1085848.patch
+
+# https://bugzilla.redhat.com/show_bug.cgi?id=1359593
+# https://github.com/vhostmd/vhostmd/issues/1
+Patch5:        0001-Fix-name-and-location-of-the-vhostmd.conf-file.patch
 
 BuildRequires: chrpath
 BuildRequires: pkgconfig
@@ -74,6 +78,7 @@ Header and libraries necessary for metrics gathering development
 %patch2 -p1
 %patch3 -p1
 %patch4 -p1
+%patch5 -p1
 
 
 %build
@@ -195,6 +200,10 @@ exit 0
 
 
 %changelog
+* Wed Feb 22 2017 Richard W.M. Jones <rjones@redhat.com> - 0.5-12
+- Fix mistake in the man page.
+  resolves: rhbz#1359593
+
 * Mon May 12 2014 Richard W.M. Jones <rjones@redhat.com> - 0.5-11
 - Output of 'rpm -qi' has changed, so the VirtualizationVendor metric
   was not working.
